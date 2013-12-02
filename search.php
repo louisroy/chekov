@@ -1,7 +1,8 @@
 <?php
+
 set_time_limit(60);
 
-$filter_occurences = function($var) {
+$filterOccurences = function($var) {
 	if ($var >= 2) {
 		return $var;
 	}
@@ -9,7 +10,7 @@ $filter_occurences = function($var) {
 	return false;
 };
 
-$collapse_xpath_attributes = function($value) {
+$collapseXpathAttributes = function($value) {
 	if (!empty($value[0])) {
 		return (int)$value[0];
 	}
@@ -62,16 +63,49 @@ $body = substr($response, $header_size);
 
 curl_close($ch);
 
-file_put_contents($xml_file, $body);
+$comments = sprintf("<!-- File generated in %s seconds -->\n", microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"]);
 
+// Save XML to file
+file_put_contents($xml_file, $comments . $body);
+
+$time_start = microtime(true);
+
+// Load XML string
 $xml = simplexml_load_string($body);
 
-$ways_filter = '/osm/way[not(tag[@k="building" or @k="building:part" or @k="amenity" or @k="historic" or @k="natural" or @k="waterway" or @k="leisure" or @k="bridge" or @k="railway" or @k="service" or @v="footway" or @v="industrial" or @v="recreation_ground" or @v="dyke" or @v="cycleway" or @v="pedestrian" or @v="track" or @v="grass" or @v="cemetery"])]';
+$filters = array(
+	'@k="building"',
+	'@k="building:part"',
+	'@k="amenity"',
+	'@k="historic"',
+	'@k="natural"',
+	'@k="waterway"',
+	'@k="leisure"',
+	'@k="bridge"',
+	'@k="railway"',
+	'@k="service"',
+	
+	'@v="footway"',
+	'@v="industrial"',
+	'@v="recreation_ground"',
+	'@v="dyke"',
+	'@v="cycleway"',
+	'@v="pedestrian"',
+	'@v="track"',
+	'@v="grass"',
+	'@v="cemetery"',
+);
 
-// Exclude ways with buildings
-$nodeIds = array_map($collapse_xpath_attributes, $xml->xpath($ways_filter . '/nd/@ref'));
+// Exclude ways with specific filters
+$ways_filter = '/osm/way[not(tag[' . implode(' or ', $filters) . '])]';
 
-$nodeIds = array_keys(array_filter(array_count_values($nodeIds), $filter_occurences));
+// Retrieve node IDs from ways
+$nodeIds = array_map($collapseXpathAttributes, $xml->xpath($ways_filter . '/nd/@ref'));
+
+// Only keep nodes that repeat over 2 ways or more
+$nodeIds = array_keys(array_filter(array_count_values($nodeIds), $filterOccurences));
+
+// Keys & values identical
 $nodeIds = array_combine($nodeIds, $nodeIds);
 
 $intersections = array();
@@ -80,21 +114,32 @@ foreach($xml->xpath('/osm/node') as $node) {
 	$attributes = $node->attributes();
 	
 	if (isset($nodeIds[(string)$attributes->id])) {
-		$ways = array_map($collapse_xpath_attributes, $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/parent::*/@id'));
+
+		$ways = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/parent::way/@id');
+		$followingNodes = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/following-sibling::nd[1]/@ref');
+		$precedingNodes = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/preceding-sibling::nd[1]/@ref');
+		
+		$adjacentNodes = @array_merge($followingNodes, $precedingNodes);
+		
+		$ways = (!empty($ways)) ? array_map($collapseXpathAttributes, $ways) : array();
+		$adjacentNodes = (!empty($adjacentNodes)) ? array_map($collapseXpathAttributes, $adjacentNodes) : array();
 		
 		$intersections[] = array(
 			'id' => (int)$attributes->id,
 			'lat' => (float)$attributes->lat,
 			'lng' => (float)$attributes->lon,
-			'ways' => $ways
+			'ways' => $ways,
+			'adjacentNodes' => $adjacentNodes,
 		);
 	}
 }
 
 header('Content-type: application/json');
 
-$json = json_encode($intersections);
+$json = json_encode($intersections, JSON_PRETTY_PRINT);
 
-file_put_contents($json_file, $json);
+$comments = sprintf("<!-- File generated in %s seconds -->\n", microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"]);
+
+file_put_contents($json_file, $comments . $json);
 
 echo $json;

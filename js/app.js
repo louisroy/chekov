@@ -153,13 +153,7 @@ var App = (function () {
 		});
 	}
 	
-	var rad = function rad(x) {
-		return x*Math.PI/180
-	};
-	
 	var findMarkersInWay = function(wayId, excludeNodeId) {
-		console.log('find marker in way #', wayId, ' exclude ', excludeNodeId);
-		
 		var markersInWay = [];
 		
 		for (var i = 0; i < markers.length; i++) {
@@ -170,13 +164,21 @@ var App = (function () {
 			}
 			
 			if ($.inArray(wayId, marker.data.ways) !== -1) {
-				console.log('Found ', wayId, ' in ', marker.data.ways.join(', '));
-				
 				markersInWay.push(marker);
 			}
 		}
 		
 		return markersInWay;
+	}
+	
+	var findMarkerById = function(nodeId) {
+		for (var i = 0; i < markers.length; i++) {
+			if (markers[i].data.id === nodeId) {
+				return markers[i];
+			}
+		}
+		
+		return null;
 	}
 		
 	var resetMarkers = function() {
@@ -196,46 +198,20 @@ var App = (function () {
 			$.merge(markersInWay, findMarkersInWay(this.data.ways[i], currentMarker.data.id));
 		}
 		
-		console.log(markersInWay);
-		
 		for (var i = 0; i < markersInWay.length; i++) {
 			markersInWay[i].setIcon(createMarker('FFFFFF'));
 		}
 		
-		currentMarker.setIcon(createMarker('00FF00'));
-		
-		/*
-		var lat = currentMarker.position.lat();
-		var lng = currentMarker.position.lng();
-		var R = 6371; // radius of earth in km
-		var distances = [];
-		var closest = -1;
-		for (var i = 0; i < markers.length; i++) {
-			var marker = markers[i];
+		for (var i = 0; i < this.data.adjacentNodes.length; i++) {
+			var adjacentMarker = findMarkerById(this.data.adjacentNodes[i]);
 			
-			if (marker.data.id === currentMarker.data.id) {
-				continue;
-			}
-			
-			var mlat = marker.position.lat();
-			var mlng = marker.position.lng();
-			var dLat = rad(mlat - lat);
-			var dLong = rad(mlng - lng);
-			var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-				Math.cos(rad(lat)) * Math.cos(rad(lat)) * Math.sin(dLong / 2) * Math.sin(dLong / 2);
-			var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-			var d = R * c;
-			
-			distances[i] = d;
-			if (closest == -1 || d < distances[closest]) {
-				closest = i;
+			if (adjacentMarker) {
+				adjacentMarker.setIcon(createMarker('000000'));
 			}
 		}
 		
-		markers[closest].setIcon(createMarker('0000FF'));
-
-//		alert(markers[closest].title);
-		*/
+		// Identify current clicked marker
+		currentMarker.setIcon(createMarker('00FF00'));
 	}
 	
 	var createMarker = function(color) {
