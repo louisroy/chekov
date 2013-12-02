@@ -113,7 +113,8 @@ var App = (function () {
 			var marker = new google.maps.Marker({
 				position: new google.maps.LatLng(intersection.lat, intersection.lng),
 				map: map,
-				title: intersection.id,
+				title: intersection.id.toString(),
+				data: intersection,
 				icon:createMarker()
 			});
 
@@ -155,6 +156,28 @@ var App = (function () {
 	var rad = function rad(x) {
 		return x*Math.PI/180
 	};
+	
+	var findMarkersInWay = function(wayId, excludeNodeId) {
+		console.log('find marker in way #', wayId, ' exclude ', excludeNodeId);
+		
+		var markersInWay = [];
+		
+		for (var i = 0; i < markers.length; i++) {
+			var marker = markers[i];
+			
+			if (marker.data.id === excludeNodeId) {
+				continue;
+			}
+			
+			if ($.inArray(wayId, marker.data.ways) !== -1) {
+				console.log('Found ', wayId, ' in ', marker.data.ways.join(', '));
+				
+				markersInWay.push(marker);
+			}
+		}
+		
+		return markersInWay;
+	}
 		
 	var resetMarkers = function() {
 		for (var i = 0; i < markers.length; i++) {
@@ -167,8 +190,21 @@ var App = (function () {
 		
 		var currentMarker = this;
 		
+		var markersInWay = [];
+
+		for (var i = 0; i < this.data.ways.length; i++) {
+			$.merge(markersInWay, findMarkersInWay(this.data.ways[i], currentMarker.data.id));
+		}
+		
+		console.log(markersInWay);
+		
+		for (var i = 0; i < markersInWay.length; i++) {
+			markersInWay[i].setIcon(createMarker('FFFFFF'));
+		}
+		
 		currentMarker.setIcon(createMarker('00FF00'));
 		
+		/*
 		var lat = currentMarker.position.lat();
 		var lng = currentMarker.position.lng();
 		var R = 6371; // radius of earth in km
@@ -177,7 +213,7 @@ var App = (function () {
 		for (var i = 0; i < markers.length; i++) {
 			var marker = markers[i];
 			
-			if (marker.title === currentMarker.title) {
+			if (marker.data.id === currentMarker.data.id) {
 				continue;
 			}
 			
@@ -199,6 +235,7 @@ var App = (function () {
 		markers[closest].setIcon(createMarker('0000FF'));
 
 //		alert(markers[closest].title);
+		*/
 	}
 	
 	var createMarker = function(color) {

@@ -1,13 +1,21 @@
 <?php
 set_time_limit(60);
 
-function filter_occurences($var) {
+$filter_occurences = function($var) {
 	if ($var >= 2) {
 		return $var;
 	}
 	
 	return false;
-}
+};
+
+$collapse_xpath_attributes = function($value) {
+	if (!empty($value[0])) {
+		return (int)$value[0];
+	}
+
+	return $value;
+};
 
 include_once('uagent.php');
 
@@ -58,18 +66,12 @@ file_put_contents($xml_file, $body);
 
 $xml = simplexml_load_string($body);
 
+$ways_filter = '/osm/way[not(tag[@k="building" or @k="building:part" or @k="amenity" or @k="historic" or @k="natural" or @k="waterway" or @k="leisure" or @k="bridge" or @k="railway" or @k="service" or @v="footway" or @v="industrial" or @v="recreation_ground" or @v="dyke" or @v="cycleway" or @v="pedestrian" or @v="track" or @v="grass" or @v="cemetery"])]';
+
 // Exclude ways with buildings
-$nodes = $xml->xpath('/osm/way[not(tag[@k="building" or @k="building:part" or @k="amenity" or @k="historic" or @k="natural" or @k="waterway" or @k="leisure" or @k="bridge" or @k="railway" or @k="service" or @v="footway" or @v="industrial" or @v="recreation_ground" or @v="dyke" or @v="cycleway" or @v="pedestrian" or @v="track" or @v="grass" or @v="cemetery"])]/nd');
+$nodeIds = array_map($collapse_xpath_attributes, $xml->xpath($ways_filter . '/nd/@ref'));
 
-// Prepare array
-$nodeIds = array();
-
-// Build simpler array to search for duplicates
-foreach ($nodes as $node) {
-	$nodeIds[] = (string)$node->attributes()->ref;
-}
-
-$nodeIds = array_keys(array_filter(array_count_values($nodeIds), 'filter_occurences'));
+$nodeIds = array_keys(array_filter(array_count_values($nodeIds), $filter_occurences));
 $nodeIds = array_combine($nodeIds, $nodeIds);
 
 $intersections = array();
@@ -78,10 +80,13 @@ foreach($xml->xpath('/osm/node') as $node) {
 	$attributes = $node->attributes();
 	
 	if (isset($nodeIds[(string)$attributes->id])) {
+		$ways = array_map($collapse_xpath_attributes, $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/parent::*/@id'));
+		
 		$intersections[] = array(
-			'id' => (string)$attributes->id,
-			'lat' => (string)$attributes->lat,
-			'lng' => (string)$attributes->lon,
+			'id' => (int)$attributes->id,
+			'lat' => (float)$attributes->lat,
+			'lng' => (float)$attributes->lon,
+			'ways' => $ways
 		);
 	}
 }
