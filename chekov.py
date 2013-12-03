@@ -85,10 +85,7 @@ for node in nodes:
     if  node_id in repeated_refs:
         #ways = list(map(int, xml.xpath('%s/nd[@ref="%d"]/parent::way/@id' % (ways_filter, node_id))));
         
-        followingNodes = list(map(int, xml.xpath('%s/nd[@ref="%d"]/following-sibling::nd[1]/@ref' % (ways_filter, node_id))));
-        precedingNodes = list(map(int, xml.xpath('%s/nd[@ref="%d"]/preceding-sibling::nd[1]/@ref' % (ways_filter, node_id))));
-        
-        adjacentNodes = followingNodes + precedingNodes
+        adjacentNodes = list(map(int, xml.xpath('%s/nd[@ref="%d"]/following-sibling::nd[1]/@ref | %s/nd[@ref="%d"]/preceding-sibling::nd[1]/@ref' % (ways_filter, node_id, ways_filter, node_id))));
         
         intersection = {
 			'id': node_id,
