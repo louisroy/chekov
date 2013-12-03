@@ -21,15 +21,15 @@ $collapseXpathAttributes = function($value) {
 include_once('uagent.php');
 
 if (empty($_POST)) {
-	$_POST['authenticity_token'] = 'lkmiXfMm+6KIyOcBXojI9BWLyEk+V57aU9Dv3QsRbHE=';
+	$_POST['authenticity_token'] = 'm1UMtiHYMjbDPu/0l6owy1bbjNjsY+9duAswA171xsc=';
 	$_POST['commit'] = 'Export';
 	$_POST['format'] = 'osm';
 
-	$_POST['maxlon'] = '-71.22261';
-	$_POST['minlon'] = '-71.23308';
+	$_POST['maxlon'] = '-71.23830061769104';
+	$_POST['minlon'] = '-71.24994140481567';
 
-	$_POST['minlat'] = '44.80521';
-	$_POST['maxlat'] = '46.81091';
+	$_POST['minlat'] = '46.80356166920837';
+	$_POST['maxlat'] = '46.80981097146872';
 }
 
 $hash = md5(json_encode($_POST));
@@ -115,20 +115,20 @@ foreach($xml->xpath('/osm/node') as $node) {
 	
 	if (isset($nodeIds[(string)$attributes->id])) {
 
-		$ways = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/parent::way/@id');
+		#$ways = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/parent::way/@id');
 		$followingNodes = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/following-sibling::nd[1]/@ref');
 		$precedingNodes = $xml->xpath($ways_filter . '/nd[@ref="' . (string)$attributes->id . '"]/preceding-sibling::nd[1]/@ref');
 		
 		$adjacentNodes = @array_merge($followingNodes, $precedingNodes);
 		
-		$ways = (!empty($ways)) ? array_map($collapseXpathAttributes, $ways) : array();
+		#$ways = (!empty($ways)) ? array_map($collapseXpathAttributes, $ways) : array();
 		$adjacentNodes = (!empty($adjacentNodes)) ? array_map($collapseXpathAttributes, $adjacentNodes) : array();
 		
 		$intersections[] = array(
 			'id' => (int)$attributes->id,
 			'lat' => (float)$attributes->lat,
 			'lng' => (float)$attributes->lon,
-			'ways' => $ways,
+			#'ways' => $ways,
 			'adjacentNodes' => $adjacentNodes,
 		);
 	}
@@ -142,4 +142,4 @@ $comments = sprintf("<!-- File generated in %s seconds -->\n", microtime(true) -
 
 file_put_contents($json_file, $comments . $json);
 
-echo $json;
+echo file_get_contents($json_file);
