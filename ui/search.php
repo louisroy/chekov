@@ -1,5 +1,4 @@
 <?php
-
 set_time_limit(60);
 
 $filterOccurences = function($var) {
@@ -17,8 +16,6 @@ $collapseXpathAttributes = function($value) {
 
 	return $value;
 };
-
-include_once('uagent.php');
 
 if (empty($_POST)) {
 	$_POST['authenticity_token'] = 'm1UMtiHYMjbDPu/0l6owy1bbjNjsY+9duAswA171xsc=';
