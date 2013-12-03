@@ -117,6 +117,10 @@ intersections = []
 
 print("Finding closest nodes to %d intersections." % len(repeated_refs))
 
+total = len(repeated_refs)
+progress = 0
+done = 0
+
 # Find adjacent nodes
 for node in nodes:
     node_id = int(node.get('id'))
@@ -140,6 +144,15 @@ for node in nodes:
         
         # Append to list
         intersections.append(intersection)
+        
+        progress += 1
+        
+        done = int(50 * progress / total)
+        
+        sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
+        sys.stdout.flush()
+
+print("")
 
 # Write JSON file
 with codecs.open(json_file, "wb", "utf-8") as f:

@@ -1,5 +1,5 @@
 <?php
-set_time_limit(60);
+set_time_limit(5 * 60);
 
 $filterOccurences = function($var) {
 	if ($var >= 2) {
@@ -30,8 +30,8 @@ if (empty($_POST)) {
 }
 
 $hash = md5(json_encode($_POST));
-$xml_file = sprintf('data/%s.xml', $hash);
-$json_file = sprintf('data/%s.json', $hash);
+$xml_file = sprintf('../data/%s.xml', $hash);
+$json_file = sprintf('../data/%s.json', $hash);
 
 $ch = curl_init('http://www.openstreetmap.org/export/finish');
 
@@ -139,4 +139,4 @@ $comments = sprintf("<!-- File generated in %s seconds -->\n", microtime(true) -
 
 file_put_contents($json_file, $comments . $json);
 
-echo file_get_contents($json_file);
+echo $json;
