@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-import codecs, requests, json, hashlib, lxml
+import argparse, codecs, requests, json, hashlib, lxml
 from lxml import etree
 from datetime import datetime
 
@@ -17,6 +17,23 @@ payload = {
     'minlat': 46.80356166920837,
     'maxlat': 46.80981097146872,
 }
+
+# Parse arguments
+parser = argparse.ArgumentParser(description='Chekov reporting.')
+parser.add_argument('-maxlon','--maxlon', help='Maximum longitude.',required=False)
+parser.add_argument('-minlon','--minlon', help='Minimum longitude.',required=False)
+parser.add_argument('-maxlat','--maxlat', help='Maximum latitude.',required=False)
+parser.add_argument('-minlat','--minlat', help='Minimum latitude.',required=False)
+args = parser.parse_args()
+
+if (args.maxlon):
+    payload['maxlon'] = float(args.maxlon)
+if (args.minlon):
+    payload['minlon'] = float(args.minlon)
+if (args.maxlat):
+    payload['maxlat'] = float(args.maxlat)
+if (args.minlat):
+    payload['minlat'] = float(args.minlat)
 
 hash = hashlib.md5(json.dumps(payload).encode()).hexdigest()
 xml_file = 'data/' + hash + '.xml'
@@ -70,15 +87,17 @@ ways_filter = '/osm/way[not(tag[' + ' or '.join(filters) + '])]';
 
 refs = list(map(int, xml.xpath(ways_filter + '/nd/@ref')));
 
-print("Found %d node references" % len(refs))
+print("Found %d node references." % len(refs))
 
 repeated_refs = set([x for x in refs if refs.count(x) >= 2])
 
-print("Found %d node references mentioned in 2 or more ways" % len(repeated_refs))
+print("Found %d intersections." % len(repeated_refs))
 
 nodes = xml.xpath('/osm/node')
 
 intersections = []
+
+print("Finding closest nodes to %d intersections." % len(repeated_refs))
 
 for node in nodes:
     node_id = int(node.get('id'))
@@ -100,7 +119,6 @@ for node in nodes:
 with codecs.open(json_file, "wb", "utf-8") as f:
     f.write(json.dumps(intersections, sort_keys=False, indent="\t", separators=(',', ': ')))
     f.close()
+    print("Saved %s" % json_file)
 
 print("Chekov finished in %s." % (datetime.now()-startTime))
-
-### Done!
