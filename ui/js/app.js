@@ -192,8 +192,9 @@ var App = (function () {
 		
 		var currentMarker = this;
 		
+		/*
 		var markersInWay = [];
-
+		
 		for (var i = 0; i < this.data.ways.length; i++) {
 			$.merge(markersInWay, findMarkersInWay(this.data.ways[i], currentMarker.data.id));
 		}
@@ -201,6 +202,7 @@ var App = (function () {
 		for (var i = 0; i < markersInWay.length; i++) {
 			markersInWay[i].setIcon(createMarker('FFFFFF'));
 		}
+		*/
 		
 		for (var i = 0; i < this.data.adjacentNodes.length; i++) {
 			var adjacentMarker = findMarkerById(this.data.adjacentNodes[i]);
