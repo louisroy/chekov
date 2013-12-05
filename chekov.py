@@ -1,12 +1,27 @@
 #!/usr/local/bin/python
 
 # Imports
-import sys, argparse, codecs, requests, json, hashlib, lxml
+import os, sys, argparse, codecs, requests, json, hashlib, lxml
 from lxml import etree
 from datetime import datetime
 
+# Output errors
+sys.stderr = sys.stdout
+
 # Measuring execution time
 start_time = datetime.now()
+
+# Parse arguments
+parser = argparse.ArgumentParser(description='Chekov reporting.')
+
+parser.add_argument('-maxlon','--maxlon', help='Maximum longitude.',required=False)
+parser.add_argument('-minlon','--minlon', help='Minimum longitude.',required=False)
+parser.add_argument('-maxlat','--maxlat', help='Maximum latitude.',required=False)
+parser.add_argument('-minlat','--minlat', help='Minimum latitude.',required=False)
+parser.add_argument('-filename','--filename', help='Filename.',required=False)
+parser.add_argument('-output','--output', help='Output format.',required=False)
+
+args = parser.parse_args()
 
 # Default payload (zoomed in Quebec City)
 payload = {
@@ -20,14 +35,6 @@ payload = {
     'minlat': 46.80356166920837,
     'maxlat': 46.80981097146872,
 }
-
-# Parse arguments
-parser = argparse.ArgumentParser(description='Chekov reporting.')
-parser.add_argument('-maxlon','--maxlon', help='Maximum longitude.',required=False)
-parser.add_argument('-minlon','--minlon', help='Minimum longitude.',required=False)
-parser.add_argument('-maxlat','--maxlat', help='Maximum latitude.',required=False)
-parser.add_argument('-minlat','--minlat', help='Minimum latitude.',required=False)
-args = parser.parse_args()
 
 # Merge to defaults
 if (args.maxlon):
@@ -45,10 +52,16 @@ if (payload['maxlon'] <= payload['minlon']):
 if (payload['maxlat'] <= payload['minlat']):
     sys.exit("Latitude values invalid.")
 
+# Default filename
+filename = hashlib.md5(json.dumps(payload).encode()).hexdigest()
+
+if (args.filename):
+    filename = args.filename
+
 # Prepare file download
-hash = hashlib.md5(json.dumps(payload).encode()).hexdigest()
-xml_file = 'data/' + hash + '.xml'
-json_file = 'data/' + hash + '.json'
+
+xml_file = os.path.dirname(os.path.abspath(__file__)) + '/data/' + filename + '.xml'
+json_file = os.path.dirname(os.path.abspath(__file__)) + '/data/' + filename + '.json'
 url = "http://www.openstreetmap.org/export/finish"
 
 # Download XML file from Open Street Maps
@@ -96,12 +109,21 @@ filters = [
 	'@v="grass"',
 	'@v="cemetery"',
 ]
+print("XML has %d elements." % int(xml.xpath('count(//*)')))
+
+# Clean up to speed up, mothertrucker!
+deleted = 0
+for bad in xml.xpath('/osm/way[tag[%s]] | //tag | /osm/relation | /osm/bounds' % (' or '.join(filters))):
+    bad.getparent().remove(bad)
+    deleted += 1
+
+print("After clean up, XML has %d elements." % int(xml.xpath('count(//*)')))
 
 # Base XPath query
-ways_filter = '/osm/way[not(tag[' + ' or '.join(filters) + '])]';
+ways_filter = '/osm/way';
 
 # Node references, convert to integers
-refs = list(map(int, xml.xpath(ways_filter + '/nd/@ref')));
+refs = list(map(int, xml.xpath('/osm/way/nd/@ref')));
 
 print("Found %d node references." % len(refs))
 
@@ -109,9 +131,6 @@ print("Found %d node references." % len(refs))
 repeated_refs = set([x for x in refs if refs.count(x) >= 2])
 
 print("Found %d intersections." % len(repeated_refs))
-
-# All nodes
-nodes = xml.xpath('/osm/node')
 
 intersections = []
 
@@ -122,35 +141,33 @@ progress = 0
 done = 0
 
 # Find adjacent nodes
-for node in nodes:
-    node_id = int(node.get('id'))
+for node_id in repeated_refs:
+    node = xml.xpath('/osm/node[@id="%d"]' % node_id)[0]
     
-    # Repeated node
-    if  node_id in repeated_refs:
-        # Get all ways where node is featured
-        #ways = list(map(int, xml.xpath('%s/nd[@ref="%d"]/parent::way/@id' % (ways_filter, node_id))));
-        
-        # Find adjacent nodes
-        adjacentNodes = list(map(int, xml.xpath('%s/nd[@ref="%d"]/following-sibling::nd[1]/@ref | %s/nd[@ref="%d"]/preceding-sibling::nd[1]/@ref' % (ways_filter, node_id, ways_filter, node_id))));
-        
-        # Intersection dictionary
-        intersection = {
-			'id': node_id,
-			'lat': float(node.get('lat')),
-			'lng': float(node.get('lon')),
-			#'ways': ways,
-			'adjacentNodes': adjacentNodes,
-        }
-        
-        # Append to list
-        intersections.append(intersection)
-        
-        progress += 1
-        
-        done = int(50 * progress / total)
-        
-        sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
-        sys.stdout.flush()
+    # Get all ways where node is featured
+    #ways = list(map(int, xml.xpath('/osm/way/nd[@ref="%d"]/parent::way/@id' % (node_id))));
+    
+    # Find adjacent nodes
+    adjacentNodes = list(map(int, xml.xpath('/osm/way/nd[@ref="%d"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="%d"]/preceding-sibling::nd[1]/@ref' % (node_id, node_id))));
+    
+    # Intersection dictionary
+    intersection = {
+        'id': node_id,
+        'lat': float(node.get('lat')),
+        'lng': float(node.get('lon')),
+        #'ways': ways,
+        'adjacentNodes': adjacentNodes,
+    }
+    
+    # Append to list
+    intersections.append(intersection)
+    
+    progress += 1
+    
+    done = int(50 * progress / total)
+    
+    sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
+    sys.stdout.flush()
 
 print("")
 
