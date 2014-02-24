@@ -90,11 +90,9 @@ var App = (function () {
 			url: $form.attr('action'),
 			type: $form.attr('method'),
 			data: $form.serializeArray(),
-			//dataType: 'json',
+			dataType: 'json',
+			dataFilter:filterData,
 			success: function (data) {
-				console.log(data);
-				return true;
-				
 				$clearBtn.attr('disabled', false);
 				$exportBtn.attr('disabled', false);
 
@@ -110,7 +108,97 @@ var App = (function () {
 
 		$form.find(':input').attr('disabled', true);
 	}
+	
+	var filterData = function(data) {
+		// Parse XML file
+		var xml = $.parseXML(data);
+		
+		// XPath filters to remove unnecessary information
+		var filters = [
+			'@k="building"',
+			'@k="building:part"',
+			'@k="amenity"',
+			'@k="historic"',
+			'@k="natural"',
+			'@k="waterway"',
+			'@k="leisure"',
+			'@k="bridge"',
+			'@k="railway"',
+			'@k="service"',
+			
+			'@v="footway"',
+			'@v="industrial"',
+			'@v="recreation_ground"',
+			'@v="dyke"',
+			'@v="cycleway"',
+			'@v="pedestrian"',
+			'@v="track"',
+			'@v="grass"',
+			'@v="cemetery"',
+		];
+		
+		console.log("XML has " + document.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
+		
+		var badNodes = document.evaluate('/osm/way[tag[' + filters.join(' or ') + ']] | //tag | /osm/relation | /osm/bounds', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+		
+		// Clean up to speed up, mothertrucker!
+		deleted = 0;
+		for (var i = 0 ; i < badNodes.snapshotLength; i++) {
+			var node = badNodes.snapshotItem(i);
+			node.parentNode.removeChild(node);
+		}
+		
+		console.log("After clean up, XML has " + document.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
+		
+		// Node references, convert to integers
+		var refNodes = document.evaluate('/osm/way/nd/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		var refs = [];
+		
+		for (var i = 0 ; i < refNodes.snapshotLength; i++) {
+			var node = refNodes.snapshotItem(i);
+			
+			refs.push(parseInt(node.nodeValue));
+		}
 
+		console.log("Found " + refs.length + " node references.");
+		
+		var sortedRefs = refs.sort();
+		var repeatedRefs = [];
+		
+		for (var i = 0; i < refs.length - 1; i++) {
+			if (sortedRefs[i + 1] == sortedRefs[i]) {
+				repeatedRefs.push(sortedRefs[i]);
+			}
+		}
+		
+		console.log("Found " + repeatedRefs.length + " intersections.");
+		
+		var intersections = [];
+		
+		for (var i in repeatedRefs) {
+			var nodeId = repeatedRefs[i];
+			var node = document.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+			
+			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+			var adjacents = [];
+		
+			for (var i = 0 ; i < adjacentNodes.snapshotLength; i++) {
+				adjacents.push(parseInt(adjacentNodes.snapshotItem(i).nodeValue));
+			}
+			
+			var intersection = {
+				id: nodeId,
+				lat: parseFloat(node.singleNodeValue.attributes.getNamedItem('lat').value),
+				lng: parseFloat(node.singleNodeValue.attributes.getNamedItem('lon').value),
+				adjacentNodes: adjacents
+			};
+			
+			intersections.push(intersection);
+		}
+		
+		return JSON.stringify(intersections);
+	}
+	
 	var onDataReceived = function (data) {
 		// Loop through intersections to display markers
 		$.each(data, function (i, intersection) {
