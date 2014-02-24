@@ -83,13 +83,18 @@ var App = (function () {
 		$clearBtn.trigger('click');
 
 		var $form = $(this);
-
+		
+		console.log($form.serializeArray());
+		
 		$.ajax({
 			url: $form.attr('action'),
 			type: $form.attr('method'),
 			data: $form.serializeArray(),
-			dataType: 'json',
+			//dataType: 'json',
 			success: function (data) {
+				console.log(data);
+				return true;
+				
 				$clearBtn.attr('disabled', false);
 				$exportBtn.attr('disabled', false);
 

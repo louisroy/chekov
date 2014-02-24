@@ -7,7 +7,7 @@
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.1/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/normalize.css">
 	<link rel="stylesheet" href="css/global.css">
 
@@ -19,11 +19,15 @@
 		<a class="navbar-brand" href="#">Chekov</a>
 	</div>
 	<div class="collapse navbar-collapse">
-		<form action="search.php" method="post" id="console" class="navbar-form navbar-right console">
-			<input type="hidden" id="maxlon" name="maxlon" size="10"/>
-			<input type="hidden" id="minlon" name="minlon" size="10"/>
-			<input type="hidden" id="maxlat" name="maxlat" size="10"/>
-			<input type="hidden" id="minlat" name="minlat" size="10"/>
+		<form action="http://cors.io/www.openstreetmap.org/export/finish" method="post" id="console" class="navbar-form navbar-right console">
+			<input type="hidden" id="authenticity_token" name="authenticity_token" value="m1UMtiHYMjbDPu/0l6owy1bbjNjsY+9duAswA171xsc=" />
+			<input type="hidden" id="commit" name="commit" value="Export" />
+			<input type="hidden" id="format" name="format" value="osm" />
+			
+			<input type="hidden" id="maxlon" name="maxlon" />
+			<input type="hidden" id="minlon" name="minlon" />
+			<input type="hidden" id="maxlat" name="maxlat" />
+			<input type="hidden" id="minlat" name="minlat" />
 	
 			<button type="submit" class="btn btn-success btn-search">Display</button>
 			<button disabled type="submit" class="btn btn-primary btn-export">Export</button>
@@ -43,10 +47,10 @@
 	<div id="map" class="map"></div>
 </div>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
 
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.1/js/bootstrap.min.js"></script>
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.1/js/bootstrap.min.js"></script>
 <script type="text/javascript"
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD8kbWQn0t8zSBLzWnQPaAzGoZ86euLRhc&sensor=false"></script>
 
