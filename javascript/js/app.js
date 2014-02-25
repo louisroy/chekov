@@ -84,8 +84,6 @@ var App = (function () {
 
 		var $form = $(this);
 		
-		console.log($form.serializeArray());
-		
 		$.ajax({
 			url: $form.attr('action'),
 			type: $form.attr('method'),
