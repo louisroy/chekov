@@ -1,5 +1,7 @@
 var App = (function () {
 	
+	var self = {};
+	
 	// UI containers
 	var $map = null;
 	var $console = null;
@@ -384,5 +386,6 @@ var App = (function () {
 	var construct = (function () {
 		google.maps.event.addDomListener(window, 'load', onAppReady);
 	})();
-
+	
+	return self;
 })();
