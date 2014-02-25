@@ -1,46 +1,46 @@
 var App = (function () {
-
+	
+	// UI containers
 	var $map = null;
 	var $console = null;
 	var $search = null;
-
-	var map = null;
-	var markers = [];
-	var geocoder = null;
-
+	
+	// UI buttons
 	var $searchBtn = null;
 	var $clearBtn = null;
 	var $exportBtn = null;
-
-	$.fn.getAttributes = function () {
-		var attributes = {};
-
-		if (this.length) {
-			$.each(this[0].attributes, function (index, attr) {
-				attributes[ attr.name ] = attr.value;
-			});
-		}
-
-		return attributes;
-	};
-
+	
+	// Google Maps API
+	var map = null;
+	var markers = [];
+	var geocoder = null;
+	
+	/**
+	 * Triggered when the DOM is ready.
+	 * 
+	 * @param {Object} ev Dom ready event object
+	 */
 	var onAppReady = function (ev) {
 		console.log('App ready');
-
+		
+		// Cache UI containers
 		$map = $('#map');
 		$console = $('#console');
 		$search = $('#search');
-
+		
+		// Cache UI buttons
 		$clearBtn = $console.find('button.btn-clear');
 		$searchBtn = $console.find('button.btn-search');
 		$exportBtn = $console.find('button.btn-export');
 
+		// UI buttons events
 		$clearBtn.on('click', onClearMap);
 		$clearBtn.on('click', onExportMap);
-
+		
+		// Form events
 		$console.on('submit', onConsoleSubmit);
 		$search.on('submit', onSearchSubmit);
-
+		
 		var mapOptions = {
 			center: new google.maps.LatLng(46.8032826, -71.242796),
 			zoom: 17,
@@ -57,13 +57,23 @@ var App = (function () {
 		google.maps.event.addListenerOnce(map, 'idle', function () {
 			google.maps.event.trigger(map, 'zoom_changed');
 		});
-	}
-
+	};
+	
+	/**
+	 * Triggered when the export button is clicked.
+	 * 
+	 * @param {Object} ev Submit event object
+	 */
 	var onExportMap = function (ev) {
 		ev.preventDefault();
 
-	}
-
+	};
+	
+	/**
+	 * Clears map from all markers
+	 * 
+	 * @param {Object} ev Submit event object
+	 */
 	var onClearMap = function (ev) {
 		ev.preventDefault();
 
@@ -75,8 +85,13 @@ var App = (function () {
 
 		$clearBtn.attr('disabled', true);
 		$exportBtn.attr('disabled', true);
-	}
+	};
 
+	/**
+	 * Triggered when the display button is clicked.
+	 * 
+	 * @param {Object} ev Submit event object
+	 */
 	var onConsoleSubmit = function (ev) {
 		ev.preventDefault();
 
@@ -89,7 +104,7 @@ var App = (function () {
 			type: $form.attr('method'),
 			data: $form.serializeArray(),
 			dataType: 'json',
-			dataFilter:filterData,
+			dataFilter: cleanUpNodes,
 			success: function (data) {
 				$clearBtn.attr('disabled', false);
 				$exportBtn.attr('disabled', false);
@@ -105,9 +120,15 @@ var App = (function () {
 		});
 
 		$form.find(':input').attr('disabled', true);
-	}
+	};
 	
-	var filterData = function(data) {
+	/**
+	 * Filters data and transforms XML into JSON.
+	 * 
+	 * @param {String} data Raw XML text
+	 * @returns {String} Stringified JSON data
+	 */
+	var cleanUpNodes = function(data) {
 		// Parse XML file
 		var xml = $.parseXML(data);
 		
@@ -197,6 +218,11 @@ var App = (function () {
 		return JSON.stringify(intersections);
 	}
 	
+	/**
+	 * Triggered when data is received from the AJAX call.
+	 * 
+	 * @param {Object} data Data containing nodes and adjacent nodes
+	 */
 	var onDataReceived = function (data) {
 		// Loop through intersections to display markers
 		$.each(data, function (i, intersection) {
@@ -214,8 +240,13 @@ var App = (function () {
 			// Store marker in array
 			markers.push(marker);
 		});
-	}
-
+	};
+	
+	/**
+	 * Triggered when the map is changed (zoom or pan).
+	 * 
+	 * @param {Object} ev Map change event object
+	 */
 	var onMapChange = function (ev) {
 		// Get bounds
 		var bounds = map.getBounds();
@@ -225,8 +256,13 @@ var App = (function () {
 		$console.find('input#minlon').val(map.getBounds().getSouthWest().lng());
 		$console.find('input#maxlat').val(map.getBounds().getNorthEast().lat());
 		$console.find('input#minlat').val(map.getBounds().getSouthWest().lat());
-	}
-
+	};
+	
+	/**
+	 * Triggered when the search form is submitted.
+	 * 
+	 * @param {Object} ev Submit event object
+	 */
 	var onSearchSubmit = function (ev) {
 		ev.preventDefault();
 
@@ -242,8 +278,15 @@ var App = (function () {
 				map.setCenter(results[0].geometry.location);
 			}
 		});
-	}
+	};
 	
+	/**
+	 * Returns all the markers in a way.
+	 * 
+	 * @param {Number} waydId ID of way
+	 * @param {Array} excludeNodeId List of excluded node IDs
+	 * @returns 
+	 */
 	var findMarkersInWay = function(wayId, excludeNodeId) {
 		var markersInWay = [];
 		
@@ -260,8 +303,14 @@ var App = (function () {
 		}
 		
 		return markersInWay;
-	}
+	};
 	
+	/**
+	 * Returns a specific marker based on it's node ID.
+	 * 
+	 * @param {Number} nodeId 
+	 * @returns {Number|Null} Google Maps marker or nothing
+	 */
 	var findMarkerById = function(nodeId) {
 		for (var i = 0; i < markers.length; i++) {
 			if (markers[i].data.id === nodeId) {
@@ -270,14 +319,23 @@ var App = (function () {
 		}
 		
 		return null;
-	}
-		
+	};
+	
+	/**
+	 * Resets all the markers to their original look.
+	 */
 	var resetMarkers = function() {
 		for (var i = 0; i < markers.length; i++) {
 			markers[i].setIcon(createMarker());
 		}
-	}
-
+	};
+	
+	/**
+	 * Triggered when a marker is clicked
+	 * 
+	 * @param {Object} ev Click event object
+	 * @param {Object} marker Marker that was clicked
+	 */
 	var onMarkerClick = function (ev, marker) {
 		resetMarkers();
 		
@@ -305,15 +363,24 @@ var App = (function () {
 		
 		// Identify current clicked marker
 		currentMarker.setIcon(createMarker('00FF00'));
-	}
+	};
 	
+	/**
+	 * Creates a marker
+	 * 
+	 * @param {String} color Hexadecimal color
+	 * @returns {MarkerImage} Google Maps marker
+	 */
 	var createMarker = function(color) {
 		return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + (color || 'FE7569'),
 		        new google.maps.Size(21, 34),
 		        new google.maps.Point(0,0),
 		        new google.maps.Point(10, 34));
-	}
-
+	};
+	
+	/**
+	 * App constructor
+	 */
 	var construct = (function () {
 		google.maps.event.addDomListener(window, 'load', onAppReady);
 	})();
