@@ -158,9 +158,9 @@ var App = (function () {
 			'@v="cemetery"',
 		];
 		
-		console.log("XML has " + document.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
+		console.log("XML has " + xml.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
 		
-		var badNodes = document.evaluate('/osm/way[tag[' + filters.join(' or ') + ']] | //tag | /osm/relation | /osm/bounds', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+		var badNodes = xml.evaluate('/osm/way[tag[' + filters.join(' or ') + ']] | //tag | /osm/relation | /osm/bounds', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
 		
 		// Clean up to speed up, mothertrucker!
 		deleted = 0;
@@ -169,10 +169,10 @@ var App = (function () {
 			node.parentNode.removeChild(node);
 		}
 		
-		console.log("After clean up, XML has " + document.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
+		console.log("After clean up, XML has " + xml.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
 		
 		// Node references, convert to integers
-		var refNodes = document.evaluate('/osm/way/nd/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		var refNodes = xml.evaluate('/osm/way/nd/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		var refs = [];
 		
 		for (var i = 0 ; i < refNodes.snapshotLength; i++) {
@@ -198,7 +198,7 @@ var App = (function () {
 		
 		for (var i in repeatedRefs) {
 			var nodeId = repeatedRefs[i];
-			var node = document.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+			var node = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 			
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 			var adjacents = [];
