@@ -173,14 +173,8 @@ var App = (function () {
 		
 		// Node references, convert to integers
 		var refNodes = xml.evaluate('/osm/way/nd/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-		var refs = [];
+		var refs = xmlMapToArray(refNodes, parseInt);
 		
-		for (var i = 0 ; i < refNodes.snapshotLength; i++) {
-			var node = refNodes.snapshotItem(i);
-			
-			refs.push(parseInt(node.nodeValue));
-		}
-
 		console.log("Found " + refs.length + " node references.");
 		
 		var sortedRefs = refs.sort();
@@ -201,11 +195,7 @@ var App = (function () {
 			var node = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 			
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-			var adjacents = [];
-		
-			for (var i = 0 ; i < adjacentNodes.snapshotLength; i++) {
-				adjacents.push(parseInt(adjacentNodes.snapshotItem(i).nodeValue));
-			}
+			var adjacents = xmlMapToArray(adjacentNodes, parseInt);
 			
 			var intersection = {
 				id: nodeId,
@@ -218,6 +208,16 @@ var App = (function () {
 		}
 		
 		return JSON.stringify(intersections);
+	}
+	
+	var xmlMapToArray = function(xml, func) {
+		var arr = [];
+		
+		for (var i = 0 ; i < xml.snapshotLength; i++) {
+			arr.push(func(xml.snapshotItem(i).nodeValue));
+		}
+		
+		return arr;
 	}
 	
 	/**
