@@ -78,7 +78,7 @@ with codecs.open(xml_file, "wb", "utf-8") as f:
         total_length = int(total_length)
         for data in response.iter_content():
             dl += len(data)
-            f.write(data)
+            f.write(data.decode('latin-1'))
             done = int(50 * dl / total_length)
             sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
             sys.stdout.flush()
@@ -98,7 +98,17 @@ filters = [
 	'@k="bridge"',
 	'@k="railway"',
 	'@k="service"',
+	'@k="tourism"',
+	'@k="shop"',
+	'@k="internet_access"',
 	
+	# landuse : Mainly used for describe the primary use of land by humans (http://wiki.openstreetmap.org/wiki/Key:landuse)
+	'contains(@k, "landuse")',
+	
+	# addr : To provide address information for buildings and facilities (http://wiki.openstreetmap.org/wiki/Key:addr)
+	'contains(@k, "addr")',
+	
+	'@v="pier"',
 	'@v="footway"',
 	'@v="industrial"',
 	'@v="recreation_ground"',
@@ -109,6 +119,7 @@ filters = [
 	'@v="grass"',
 	'@v="cemetery"',
 ]
+
 print("XML has %d elements." % int(xml.xpath('count(//*)')))
 
 # Clean up to speed up, mothertrucker!
@@ -118,9 +129,6 @@ for bad in xml.xpath('/osm/way[tag[%s]] | //tag | /osm/relation | /osm/bounds' %
     deleted += 1
 
 print("After clean up, XML has %d elements." % int(xml.xpath('count(//*)')))
-
-# Base XPath query
-ways_filter = '/osm/way';
 
 # Node references, convert to integers
 refs = list(map(int, xml.xpath('/osm/way/nd/@ref')));
@@ -148,11 +156,22 @@ for node_id in repeated_refs:
     #ways = list(map(int, xml.xpath('/osm/way/nd[@ref="%d"]/parent::way/@id' % (node_id))));
     
     # Find adjacent nodes
-    adjacentNodes = list(map(int, xml.xpath('/osm/way/nd[@ref="%d"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="%d"]/preceding-sibling::nd[1]/@ref' % (node_id, node_id))));
+    adjacentNodes = list(map(int, xml.xpath('/osm/way/nd[@ref="%d"]/following-sibling::nd/@ref | /osm/way/nd[@ref="%d"]/preceding-sibling::nd/@ref' % (node_id, node_id))));
+    
+    # Exclude current node as adjacent node
+    adjacentNodes = [item for item in adjacentNodes if item != node_id]
+    
+    # Intersect lists
+    adjacentNodes = list(set.intersection(repeated_refs, adjacentNodes))
+    
+    # You ain't got none adjacent node, gtfo
+    if not adjacentNodes:
+        continue
     
     # Intersection dictionary
     intersection = {
         'id': node_id,
+        'content': "Node #%d" % node_id,
         'lat': float(node.get('lat')),
         'lng': float(node.get('lon')),
         #'ways': ways,
@@ -177,4 +196,4 @@ with codecs.open(json_file, "wb", "utf-8") as f:
     f.close()
     print("Saved %s" % json_file)
 
-print("Chekov finished in %s." % (datetime.now()-start_time))
+print("Chekov finished in %s." % (datetime.now() - start_time))

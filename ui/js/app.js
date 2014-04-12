@@ -7,6 +7,7 @@ var App = (function () {
 	var map = null;
 	var markers = [];
 	var geocoder = null;
+	var infowindow = null;
 
 	var $searchBtn = null;
 	var $clearBtn = null;
@@ -208,19 +209,49 @@ var App = (function () {
 			var adjacentMarker = findMarkerById(this.data.adjacentNodes[i]);
 			
 			if (adjacentMarker) {
-				adjacentMarker.setIcon(createMarker('000000'));
+				adjacentMarker.setIcon(createMarker('red'));
 			}
 		}
 		
 		// Identify current clicked marker
-		currentMarker.setIcon(createMarker('00FF00'));
+		currentMarker.setIcon(createMarker('redstar'));
+
+		showInfoWindow(currentMarker);
 	}
 	
-	var createMarker = function(color) {
-		return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + (color || 'FE7569'),
-		        new google.maps.Size(21, 34),
+	var createMarker = function(type) {
+		switch(type) {
+			case 'red' :
+				url = "http://maps.google.com/mapfiles/kml/pal4/icon49.png";
+				break;
+			case 'black' :
+				url = "http://maps.google.com/mapfiles/kml/pal4/icon57.png";
+				break;
+			case 'redstar' :
+				url = "http://maps.google.com/mapfiles/kml/pal4/icon51.png";
+				break;
+			case 'blackstar' :
+				url = "http://maps.google.com/mapfiles/kml/pal4/icon59.png";
+				break;
+			default :
+				url = "http://maps.google.com/mapfiles/kml/pal4/icon57.png";
+				break;
+		}
+		
+		return new google.maps.MarkerImage(url,
+		        new google.maps.Size(32, 32),
 		        new google.maps.Point(0,0),
-		        new google.maps.Point(10, 34));
+		        new google.maps.Point(15, 17));
+	}
+	
+	var showInfoWindow = function(marker) {
+		if (infowindow) {
+			infowindow.close();
+		}
+		
+		infowindow = new google.maps.InfoWindow(marker.data);
+		
+		infowindow.open(map, marker);
 	}
 
 	var construct = (function () {
