@@ -31,9 +31,9 @@ var App = (function () {
 		$search = $('#search');
 		
 		// Cache UI buttons
-		$clearBtn = $console.find('button.btn-clear');
-		$searchBtn = $console.find('button.btn-search');
-		$exportBtn = $console.find('button.btn-export');
+		$clearBtn = $console.find('.btn-clear');
+		$searchBtn = $console.find('.btn-search');
+		$exportBtn = $console.find('.btn-export');
 
 		// UI buttons events
 		$clearBtn.on('click', onClearMap);
@@ -104,7 +104,9 @@ var App = (function () {
 		$.ajax({
 			url: $form.attr('action'),
 			type: $form.attr('method'),
-			data: $form.serializeArray(),
+			data: {
+				bbox:[$form.find('#minlon').val(), $form.find('#minlat').val(), $form.find('#maxlon').val(), $form.find('#maxlat').val()].join(',')
+			},
 			dataType: 'json',
 			dataFilter: cleanUpNodes,
 			success: function (data) {
@@ -391,3 +393,20 @@ var App = (function () {
 	
 	return self;
 })();
+
+$.fn.serializeObject = function()
+{
+    var o = {};
+    var a = this.serializeArray();
+    $.each(a, function() {
+        if (o[this.name] !== undefined) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return o;
+};
