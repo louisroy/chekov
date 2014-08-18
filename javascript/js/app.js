@@ -37,7 +37,7 @@ var App = (function () {
 
 		// UI buttons events
 		$clearBtn.on('click', onClearMap);
-		$clearBtn.on('click', onExportMap);
+		$exportBtn.on('click', onExportMap);
 		
 		// Form events
 		$console.on('submit', onConsoleSubmit);
@@ -67,8 +67,20 @@ var App = (function () {
 	 * @param {Object} ev Submit event object
 	 */
 	var onExportMap = function (ev) {
-		ev.preventDefault();
-
+		var $button = $(this);
+		var exportList = [];
+		
+		// Loop and build array with lines for each intersection
+		// {node_id},{connecting_node_id},{connecting_node_id},etc
+		$.each(markers, function(i, marker) {
+			exportList.push(marker.data.id + ',' + marker.data.adjacentNodes.join(','))
+		});
+		
+		// base64 list
+		var exportData = btoa(exportList.join("\r\n"));
+		
+		// Change href of button
+		$button.attr('href', 'data:application/octet-stream;charset=utf-8;base64,' + exportData);
 	};
 	
 	/**
