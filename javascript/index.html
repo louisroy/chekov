@@ -16,7 +16,7 @@
 		<span class="navbar-brand">Chekov</span>
 	</div>
 	<div class="collapse navbar-collapse">
-		<form action="http://cors.io/www.openstreetmap.org/export/finish" method="post" id="console" class="navbar-form navbar-right console">
+		<form action="http://cors.louisroy.net/www.openstreetmap.org/export/finish" method="post" id="console" class="navbar-form navbar-right console">
 			<input type="hidden" id="authenticity_token" name="authenticity_token" value="m1UMtiHYMjbDPu/0l6owy1bbjNjsY+9duAswA171xsc=" />
 			<input type="hidden" id="commit" name="commit" value="Export" />
 			<input type="hidden" id="format" name="format" value="osm" />
@@ -27,8 +27,9 @@
 			<input type="hidden" id="minlat" name="minlat" />
 	
 			<button type="submit" class="btn btn-success btn-search">Display</button>
-			<!--<button disabled type="submit" class="btn btn-primary btn-export">Export</button>-->
 			<button disabled type="submit" class="btn btn-danger btn-clear">Clear</button>
+			
+			<a href="data:application/octet-stream;charset=utf-8;base64,Zm9vIGJhcg==" class="btn btn-primary" download="filename.dat">Export</a>
 		</form>
 		
 		<form action="#" id="search" class="navbar-form navbar-right search" role="search">
