@@ -16,6 +16,7 @@ var App = (function () {
 	var map = null;
 	var markers = [];
 	var geocoder = null;
+	var infoWindow = null;
 	
 	/**
 	 * Triggered when the DOM is ready.
@@ -379,6 +380,17 @@ var App = (function () {
 		
 		// Identify current clicked marker
 		currentMarker.setIcon(createMarker('00FF00'));
+		
+		if (infoWindow) {
+			infoWindow.close();
+			infoWindow = null;
+		}
+		
+		infoWindow = new google.maps.InfoWindow({
+			content: currentMarker.data.id.toString()
+		});
+		
+		infoWindow.open(map, currentMarker);
 	};
 	
 	/**
