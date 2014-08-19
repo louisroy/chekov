@@ -201,6 +201,7 @@ var App = (function () {
 			}
 		}
 		
+		// Unique node IDs
 		repeatedRefs = _.uniq(repeatedRefs);
 		
 		console.log("Found " + repeatedRefs.length + " intersections.");
@@ -212,13 +213,11 @@ var App = (function () {
 			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 			
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+			
+			// Unique adjacent nodes IDs
 			var adjacents = _.uniq(xmlMapToArray(adjacentNodes, parseInt));
 			
-			if (adjacents.length === 0) {
-				console.log('Node ID ' + nodeId + ' has no adjacent nodes. Ignore and continue');
-				continue;
-			}
-			
+			// Build description user in the InfoBox
 			var description = [];
 				description.push('<strong>' + nodeId + '</strong>');
 				description.push('Adjacent nodes:');
