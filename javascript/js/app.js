@@ -414,11 +414,19 @@ var App = (function () {
 	 * @returns {Object} Google Maps marker
 	 */
 	var createMarker = function (color) {
+		var image = 'http://maps.google.com/mapfiles/kml/pal4/icon57.png';
+		
+		if (color === '000000') {
+			image = 'http://maps.google.com/mapfiles/kml/pal4/icon49.png';
+		} else if (color === '00FF00') {
+			image = 'http://maps.google.com/mapfiles/kml/pal4/icon58.png';
+		}
+		
 		return new google.maps.MarkerImage(
-			"http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + (color || 'FE7569'),
-			new google.maps.Size(21, 34),
+			image,
+			new google.maps.Size(32, 32),
 			new google.maps.Point(0, 0),
-			new google.maps.Point(10, 34)
+			new google.maps.Point(16, 16)
 		);
 	};
 
