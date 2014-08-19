@@ -210,7 +210,7 @@ var App = (function () {
 			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-			var adjacents = xmlMapToArray(adjacentNodes, parseInt);
+			var adjacents = _.uniq(xmlMapToArray(adjacentNodes, parseInt));
 
 			var intersection = {
 				id: nodeId,
