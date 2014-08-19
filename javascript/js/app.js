@@ -208,7 +208,8 @@ var App = (function () {
 		for (var k in repeatedRefs) {
 			var nodeId = repeatedRefs[k];
 			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-
+			
+			// TODO : fix this non-sense
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 			var adjacents = _.uniq(xmlMapToArray(adjacentNodes, parseInt));
 
