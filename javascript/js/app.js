@@ -200,26 +200,40 @@ var App = (function () {
 				repeatedRefs.push(sortedRefs[j]);
 			}
 		}
-
+		
+		repeatedRefs = _.uniq(repeatedRefs);
+		
 		console.log("Found " + repeatedRefs.length + " intersections.");
-
+		
 		var intersections = [];
 
 		for (var k in repeatedRefs) {
 			var nodeId = repeatedRefs[k];
 			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 			
-			// TODO : fix this non-sense
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 			var adjacents = _.uniq(xmlMapToArray(adjacentNodes, parseInt));
-
+			
+			if (adjacents.length === 0) {
+				console.log('Node ID ' + nodeId + ' has no adjacent nodes. Ignore and continue');
+				continue;
+			}
+			
+			var description = [];
+				description.push('<strong>' + nodeId + '</strong>');
+				description.push('Adjacent nodes:');
+				description.push(adjacents.join(', '));
+				description.push('XML: ');
+				description.push($('<div />').text(new XMLSerializer().serializeToString(currentNode.singleNodeValue)).html());
+			
 			var intersection = {
 				id: nodeId,
+				description: '<div style="width:200px;">' + description.join('<br />') + '</div>',
 				lat: parseFloat(currentNode.singleNodeValue.attributes.getNamedItem('lat').value),
 				lng: parseFloat(currentNode.singleNodeValue.attributes.getNamedItem('lon').value),
 				adjacentNodes: adjacents
 			};
-
+			
 			intersections.push(intersection);
 		}
 
@@ -388,7 +402,7 @@ var App = (function () {
 		}
 
 		infoWindow = new google.maps.InfoWindow({
-			content: currentMarker.data.id.toString()
+			content: currentMarker.data.description
 		});
 
 		infoWindow.open(map, currentMarker);
