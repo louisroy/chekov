@@ -1,36 +1,36 @@
 var App = (function () {
-	
+
 	var self = {};
-	
+
 	// UI containers
 	var $map = null;
 	var $console = null;
 	var $search = null;
-	
+
 	// UI buttons
 	var $searchBtn = null;
 	var $clearBtn = null;
 	var $exportBtn = null;
-	
+
 	// Google Maps API
 	var map = null;
 	var markers = [];
 	var geocoder = null;
 	var infoWindow = null;
-	
+
 	/**
 	 * Triggered when the DOM is ready.
-	 * 
+	 *
 	 * @param {Object} ev Dom ready event object
 	 */
 	var onAppReady = function (ev) {
 		console.log('App ready');
-		
+
 		// Cache UI containers
 		$map = $('#map');
 		$console = $('#console');
 		$search = $('#search');
-		
+
 		// Cache UI buttons
 		$clearBtn = $console.find('.btn-clear');
 		$searchBtn = $console.find('.btn-search');
@@ -39,11 +39,11 @@ var App = (function () {
 		// UI buttons events
 		$clearBtn.on('click', onClearMap);
 		$exportBtn.on('click', onExportMap);
-		
+
 		// Form events
 		$console.on('submit', onConsoleSubmit);
 		$search.on('submit', onSearchSubmit);
-		
+
 		var mapOptions = {
 			center: new google.maps.LatLng(46.8032826, -71.242796),
 			zoom: 17,
@@ -61,32 +61,32 @@ var App = (function () {
 			google.maps.event.trigger(map, 'zoom_changed');
 		});
 	};
-	
+
 	/**
 	 * Triggered when the export button is clicked.
-	 * 
+	 *
 	 * @param {Object} ev Submit event object
 	 */
 	var onExportMap = function (ev) {
 		var $button = $(this);
 		var exportList = [];
-		
+
 		// Loop and build array with lines for each intersection
 		// {node_id},{connecting_node_id},{connecting_node_id},etc
-		$.each(markers, function(i, marker) {
+		$.each(markers, function (i, marker) {
 			exportList.push(marker.data.id + ',' + marker.data.adjacentNodes.join(','))
 		});
-		
+
 		// base64 list
 		var exportData = btoa(exportList.join("\r\n"));
-		
+
 		// Change href of button
 		$button.attr('href', 'data:application/octet-stream;charset=utf-8;base64,' + exportData);
 	};
-	
+
 	/**
 	 * Clears map from all markers
-	 * 
+	 *
 	 * @param {Object} ev Submit event object
 	 */
 	var onClearMap = function (ev) {
@@ -104,7 +104,7 @@ var App = (function () {
 
 	/**
 	 * Triggered when the display button is clicked.
-	 * 
+	 *
 	 * @param {Object} ev Submit event object
 	 */
 	var onConsoleSubmit = function (ev) {
@@ -113,12 +113,12 @@ var App = (function () {
 		$clearBtn.trigger('click');
 
 		var $form = $(this);
-		
+
 		$.ajax({
 			url: $form.attr('action'),
 			type: $form.attr('method'),
 			data: {
-				bbox:[$form.find('#minlon').val(), $form.find('#minlat').val(), $form.find('#maxlon').val(), $form.find('#maxlat').val()].join(',')
+				bbox: [$form.find('#minlon').val(), $form.find('#minlat').val(), $form.find('#maxlon').val(), $form.find('#maxlat').val()].join(',')
 			},
 			dataType: 'json',
 			dataFilter: cleanUpNodes,
@@ -138,17 +138,17 @@ var App = (function () {
 
 		$form.find(':input').attr('disabled', true);
 	};
-	
+
 	/**
 	 * Filters data and transforms XML into JSON.
-	 * 
+	 *
 	 * @param {String} data Raw XML text
 	 * @returns {String} Stringified JSON data
 	 */
-	var cleanUpNodes = function(data) {
+	var cleanUpNodes = function (data) {
 		// Parse XML file
 		var xml = $.parseXML(data);
-		
+
 		// XPath filters to remove unnecessary information
 		var filters = [
 			'@k="building"',
@@ -161,7 +161,7 @@ var App = (function () {
 			'@k="bridge"',
 			'@k="railway"',
 			'@k="service"',
-			
+
 			'@v="footway"',
 			'@v="industrial"',
 			'@v="recreation_ground"',
@@ -170,74 +170,74 @@ var App = (function () {
 			'@v="pedestrian"',
 			'@v="track"',
 			'@v="grass"',
-			'@v="cemetery"',
+			'@v="cemetery"'
 		];
-		
+
 		console.log("XML has " + xml.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
-		
-		var badNodes = xml.evaluate('/osm/way[tag[' + filters.join(' or ') + ']] | //tag | /osm/relation | /osm/bounds', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
-		
+
+		var badNodes = xml.evaluate('/osm/way[tag[' + filters.join(' or ') + ']] | //tag | /osm/relation | /osm/bounds', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
 		// Clean up to speed up, mothertrucker!
-		deleted = 0;
-		for (var i = 0 ; i < badNodes.snapshotLength; i++) {
+		var deleted = 0;
+		for (var i = 0; i < badNodes.snapshotLength; i++) {
 			var node = badNodes.snapshotItem(i);
 			node.parentNode.removeChild(node);
 		}
-		
+
 		console.log("After clean up, XML has " + xml.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
-		
+
 		// Node references, convert to integers
 		var refNodes = xml.evaluate('/osm/way/nd/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		var refs = xmlMapToArray(refNodes, parseInt);
-		
+
 		console.log("Found " + refs.length + " node references.");
-		
+
 		var sortedRefs = refs.sort();
 		var repeatedRefs = [];
-		
-		for (var i = 0; i < refs.length - 1; i++) {
-			if (sortedRefs[i + 1] == sortedRefs[i]) {
-				repeatedRefs.push(sortedRefs[i]);
+
+		for (var j = 0; j < refs.length - 1; j++) {
+			if (sortedRefs[j + 1] == sortedRefs[j]) {
+				repeatedRefs.push(sortedRefs[j]);
 			}
 		}
-		
+
 		console.log("Found " + repeatedRefs.length + " intersections.");
-		
+
 		var intersections = [];
-		
-		for (var i in repeatedRefs) {
-			var nodeId = repeatedRefs[i];
-			var node = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-			
+
+		for (var k in repeatedRefs) {
+			var nodeId = repeatedRefs[k];
+			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 			var adjacents = xmlMapToArray(adjacentNodes, parseInt);
-			
+
 			var intersection = {
 				id: nodeId,
-				lat: parseFloat(node.singleNodeValue.attributes.getNamedItem('lat').value),
-				lng: parseFloat(node.singleNodeValue.attributes.getNamedItem('lon').value),
+				lat: parseFloat(currentNode.singleNodeValue.attributes.getNamedItem('lat').value),
+				lng: parseFloat(currentNode.singleNodeValue.attributes.getNamedItem('lon').value),
 				adjacentNodes: adjacents
 			};
-			
+
 			intersections.push(intersection);
 		}
-		
+
 		return JSON.stringify(intersections);
-	}
-	
-	var xmlMapToArray = function(xml, func) {
+	};
+
+	var xmlMapToArray = function (xml, func) {
 		var arr = [];
-		
-		for (var i = 0 ; i < xml.snapshotLength; i++) {
+
+		for (var i = 0; i < xml.snapshotLength; i++) {
 			arr.push(func(xml.snapshotItem(i).nodeValue));
 		}
-		
+
 		return arr;
-	}
-	
+	};
+
 	/**
 	 * Triggered when data is received from the AJAX call.
-	 * 
+	 *
 	 * @param {Object} data Data containing nodes and adjacent nodes
 	 */
 	var onDataReceived = function (data) {
@@ -249,7 +249,7 @@ var App = (function () {
 				map: map,
 				title: intersection.id.toString(),
 				data: intersection,
-				icon:createMarker()
+				icon: createMarker()
 			});
 
 			google.maps.event.addListener(marker, 'click', onMarkerClick);
@@ -258,10 +258,10 @@ var App = (function () {
 			markers.push(marker);
 		});
 	};
-	
+
 	/**
 	 * Triggered when the map is changed (zoom or pan).
-	 * 
+	 *
 	 * @param {Object} ev Map change event object
 	 */
 	var onMapChange = function (ev) {
@@ -274,10 +274,10 @@ var App = (function () {
 		$console.find('input#maxlat').val(map.getBounds().getNorthEast().lat());
 		$console.find('input#minlat').val(map.getBounds().getSouthWest().lat());
 	};
-	
+
 	/**
 	 * Triggered when the search form is submitted.
-	 * 
+	 *
 	 * @param {Object} ev Submit event object
 	 */
 	var onSearchSubmit = function (ev) {
@@ -296,141 +296,145 @@ var App = (function () {
 			}
 		});
 	};
-	
+
 	/**
 	 * Returns all the markers in a way.
-	 * 
-	 * @param {Number} waydId ID of way
+	 *
+	 * @param {Number} wayId ID of way
 	 * @param {Array} excludeNodeId List of excluded node IDs
-	 * @returns 
+	 * @returns {Array} Marker in way
 	 */
-	var findMarkersInWay = function(wayId, excludeNodeId) {
+	var findMarkersInWay = function (wayId, excludeNodeId) {
 		var markersInWay = [];
-		
+
 		for (var i = 0; i < markers.length; i++) {
 			var marker = markers[i];
-			
+
 			if (marker.data.id === excludeNodeId) {
 				continue;
 			}
-			
+
 			if ($.inArray(wayId, marker.data.ways) !== -1) {
 				markersInWay.push(marker);
 			}
 		}
-		
+
 		return markersInWay;
 	};
-	
+
 	/**
 	 * Returns a specific marker based on it's node ID.
-	 * 
-	 * @param {Number} nodeId 
+	 *
+	 * @param {Number} nodeId
 	 * @returns {Number|Null} Google Maps marker or nothing
 	 */
-	var findMarkerById = function(nodeId) {
+	var findMarkerById = function (nodeId) {
 		for (var i = 0; i < markers.length; i++) {
 			if (markers[i].data.id === nodeId) {
 				return markers[i];
 			}
 		}
-		
+
 		return null;
 	};
-	
+
 	/**
 	 * Resets all the markers to their original look.
 	 */
-	var resetMarkers = function() {
+	var resetMarkers = function () {
 		for (var i = 0; i < markers.length; i++) {
 			markers[i].setIcon(createMarker());
 		}
 	};
-	
+
 	/**
 	 * Triggered when a marker is clicked
-	 * 
+	 *
 	 * @param {Object} ev Click event object
 	 * @param {Object} marker Marker that was clicked
 	 */
 	var onMarkerClick = function (ev, marker) {
 		resetMarkers();
-		
+
 		var currentMarker = this;
-		
+
 		/*
-		var markersInWay = [];
-		
-		for (var i = 0; i < this.data.ways.length; i++) {
-			$.merge(markersInWay, findMarkersInWay(this.data.ways[i], currentMarker.data.id));
-		}
-		
-		for (var i = 0; i < markersInWay.length; i++) {
-			markersInWay[i].setIcon(createMarker('FFFFFF'));
-		}
-		*/
-		
+		 var markersInWay = [];
+
+		 for (var i = 0; i < this.data.ways.length; i++) {
+		 $.merge(markersInWay, findMarkersInWay(this.data.ways[i], currentMarker.data.id));
+		 }
+
+		 for (var i = 0; i < markersInWay.length; i++) {
+		 markersInWay[i].setIcon(createMarker('FFFFFF'));
+		 }
+		 */
+
 		for (var i = 0; i < this.data.adjacentNodes.length; i++) {
 			var adjacentMarker = findMarkerById(this.data.adjacentNodes[i]);
-			
+
 			if (adjacentMarker) {
 				adjacentMarker.setIcon(createMarker('000000'));
 			}
 		}
-		
+
 		// Identify current clicked marker
 		currentMarker.setIcon(createMarker('00FF00'));
-		
+
 		if (infoWindow) {
 			infoWindow.close();
 			infoWindow = null;
 		}
-		
+
 		infoWindow = new google.maps.InfoWindow({
 			content: currentMarker.data.id.toString()
 		});
-		
+
 		infoWindow.open(map, currentMarker);
 	};
-	
+
 	/**
 	 * Creates a marker
-	 * 
+	 *
 	 * @param {String} color Hexadecimal color
-	 * @returns {MarkerImage} Google Maps marker
+	 * @returns {Object} Google Maps marker
 	 */
-	var createMarker = function(color) {
+	var createMarker = function (color) {
 		return new google.maps.MarkerImage(
 			"http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + (color || 'FE7569'),
 			new google.maps.Size(21, 34),
-			new google.maps.Point(0,0),
+			new google.maps.Point(0, 0),
 			new google.maps.Point(10, 34)
 		);
 	};
-	
+
 	/**
 	 * App constructor
 	 */
 	var construct = (function () {
 		google.maps.event.addDomListener(window, 'load', onAppReady);
 	})();
-	
+
 	return self;
 })();
 
-$.fn.serializeObject = function()
-{
-    var o = {};
-    var a = this.serializeArray();
-    $.each(a, function() {
-        if (o[this.name] !== undefined) {
-            if (!o[this.name].push) {
-                o[this.name] = [o[this.name]];
-            }
-            o[this.name].push(this.value || '');
-        } else {
-            o[this.name] = this.value || '';
-        }
-    });
-    return o;
+/**
+ * Transforms form data into an object via serializeArray
+ * Solution by Tobias Cohen (http://stackoverflow.com/a/1186309/176772)
+ * @returns {Object}
+ */
+$.fn.serializeObject = function () {
+	var o = {};
+	var a = this.serializeArray();
+	$.each(a, function () {
+		if (o[this.name] !== undefined) {
+			if (!o[this.name].push) {
+				o[this.name] = [o[this.name]];
+			}
+			o[this.name].push(this.value || '');
+		} else {
+			o[this.name] = this.value || '';
+		}
+	});
+	return o;
 };
