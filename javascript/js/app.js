@@ -73,7 +73,7 @@ var App = (function () {
 
 		// Loop and build array with lines for each intersection
 		// {node_id},{connecting_node_id},{connecting_node_id},etc
-		$.each(markers, function (i, marker) {
+		_.each(markers, function (marker, i, list) {
 			exportList.push(marker.data.id + ',' + marker.data.adjacentNodes.join(','))
 		});
 
@@ -92,7 +92,7 @@ var App = (function () {
 	var onClearMap = function (ev) {
 		ev.preventDefault();
 
-		$.each(markers, function (i, marker) {
+		_.each(markers, function (marker, i, list) {
 			marker.setMap(null);
 		});
 
@@ -256,7 +256,7 @@ var App = (function () {
 	 */
 	var onDataReceived = function (data) {
 		// Loop through intersections to display markers
-		$.each(data, function (i, intersection) {
+		_.each(data, function (intersection, i, list) {
 			// Create marker
 			var marker = new google.maps.Marker({
 				position: new google.maps.LatLng(intersection.lat, intersection.lng),
