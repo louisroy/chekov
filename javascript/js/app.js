@@ -212,6 +212,8 @@ var App = (function () {
 			var nodeId = repeatedRefs[k];
 			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
 			
+			// TODO : Adjacent nodes are still missing in some places
+			
 			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 			
 			// Unique adjacent nodes IDs
