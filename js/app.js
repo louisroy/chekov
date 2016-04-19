@@ -19,6 +19,15 @@ var App = (function () {
 	var infoWindow = null;
 
 	/**
+	 * App constructor
+	 */
+	var construct = function () {
+		google.maps.event.addDomListener(window, 'load', onAppReady);
+
+		return self;
+	};
+
+	/**
 	 * Triggered when the DOM is ready.
 	 *
 	 * @param {Object} ev Dom ready event object
@@ -432,12 +441,5 @@ var App = (function () {
 		);
 	};
 
-	/**
-	 * App constructor
-	 */
-	var construct = (function () {
-		google.maps.event.addDomListener(window, 'load', onAppReady);
-	})();
-
-	return self;
+	return construct();
 })();
