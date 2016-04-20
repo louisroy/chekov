@@ -195,6 +195,12 @@ var App = (function () {
 
 		console.log("After clean up, XML has " + xml.evaluate('count(//*)', xml, null, XPathResult.NUMBER_TYPE, null).numberValue + " elements.");
 
+		var repeatedRefs = findIntersections(xml);
+
+		return prepareData(repeatedRefs, xml);
+	};
+
+	var findIntersections = function(xml) {
 		// Node references, convert to integers
 		var refNodes = xml.evaluate('/osm/way/nd/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		var refs = xmlMapToArray(refNodes, parseInt);
@@ -214,20 +220,37 @@ var App = (function () {
 		repeatedRefs = _.uniq(repeatedRefs);
 		
 		console.log("Found " + repeatedRefs.length + " intersections.");
-		
+
+		return repeatedRefs;
+	};
+
+
+	var prepareData = function(repeatedRefs, xml) {
 		var intersections = [];
 
 		for (var k in repeatedRefs) {
 			var nodeId = repeatedRefs[k];
-			var currentNode = xml.evaluate('/osm/node[@id="' + nodeId + '"]', xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-			
+			var currentNode = xml.evaluate(
+				'/osm/node[@id="' + nodeId + '"]',
+				xml,
+				null,
+				XPathResult.FIRST_ORDERED_NODE_TYPE,
+				null
+			);
+
 			// TODO : Adjacent nodes are still missing in some places
-			
-			var adjacentNodes = xml.evaluate('/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref', xml, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-			
+
+			var adjacentNodes = xml.evaluate(
+				'/osm/way/nd[@ref="' + nodeId + '"]/following-sibling::nd[1]/@ref | /osm/way/nd[@ref="' + nodeId + '"]/preceding-sibling::nd[1]/@ref',
+				xml,
+				null,
+				XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+				null
+			);
+
 			// Unique adjacent nodes IDs
 			var adjacents = _.uniq(xmlMapToArray(adjacentNodes, parseInt));
-			
+
 			// Build description user in the InfoBox
 			var description = [];
 				description.push('<strong>' + nodeId + '</strong>');
@@ -235,7 +258,7 @@ var App = (function () {
 				description.push(adjacents.join(', '));
 				description.push('XML: ');
 				description.push($('<div />').text(new XMLSerializer().serializeToString(currentNode.singleNodeValue)).html());
-			
+
 			var intersection = {
 				id: nodeId,
 				description: '<div style="width:200px;">' + description.join('<br />') + '</div>',
@@ -243,21 +266,32 @@ var App = (function () {
 				lng: parseFloat(currentNode.singleNodeValue.attributes.getNamedItem('lon').value),
 				adjacentNodes: adjacents
 			};
-			
+
 			intersections.push(intersection);
 		}
 
 		return JSON.stringify(intersections);
-	};
 
-	var xmlMapToArray = function (xml, func) {
-		var arr = [];
+		/*
+		 var running = 0;
 
-		for (var i = 0; i < xml.snapshotLength; i++) {
-			arr.push(func(xml.snapshotItem(i).nodeValue));
-		}
+		 for (var k in repeatedRefs) {
+		 var worker = new Worker("/js/worker.js");
+		 worker.onmessage = function() {
+		 --running;
 
-		return arr;
+		 console.log('Worker is done');
+
+		 if (running === 0) {
+		 console.log('All workers done')
+		 }
+		 };
+		 worker.postMessage({nodeId:repeatedRefs[k], xml:xml.toString()});
+
+		 ++running;
+		 }
+
+		 */
 	};
 
 	/**
