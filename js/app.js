@@ -459,12 +459,12 @@ var App = (function () {
 	 * @returns {Object} Google Maps marker
 	 */
 	var createMarker = function (color) {
-		var image = 'http://maps.google.com/mapfiles/kml/pal4/icon57.png';
+		var image = '//maps.google.com/mapfiles/kml/pal4/icon57.png';
 		
 		if (color === '000000') {
-			image = 'http://maps.google.com/mapfiles/kml/pal4/icon49.png';
+			image = '//maps.google.com/mapfiles/kml/pal4/icon57.png//maps.google.com/mapfiles/kml/pal4/icon49.png';
 		} else if (color === '00FF00') {
-			image = 'http://maps.google.com/mapfiles/kml/pal4/icon58.png';
+			image = '//maps.google.com/mapfiles/kml/pal4/icon58.png';
 		}
 		
 		return new google.maps.MarkerImage(
