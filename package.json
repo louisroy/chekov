@@ -1,0 +1,24 @@
+{
+  "name": "chekov",
+  "version": "1.0.0",
+  "description": "Chekov is a small Web app that uses OpenStreetMap's API to extract intersections information on a given set of coordinates.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./bin/www",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/louisroy/chekov.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/louisroy/chekov/issues"
+  },
+  "homepage": "https://github.com/louisroy/chekov#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "pug": "^2.0.3"
+  }
+}

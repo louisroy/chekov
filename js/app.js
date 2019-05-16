@@ -53,21 +53,29 @@ var App = (function () {
 		$console.on('submit', onConsoleSubmit);
 		$search.on('submit', onSearchSubmit);
 
-		var mapOptions = {
-			center: new google.maps.LatLng(46.8032826, -71.242796),
-			zoom: 17,
-			mapTypeId: google.maps.MapTypeId.ROADMAP
-		};
+		$.ajax({
+			url: 'https://ip.nf/me.json',
+			dataType: 'json',
+			success: function (data) {
+				var mapOptions = {
+					center: new google.maps.LatLng(data.ip.latitude, data.ip.longitude),
+					zoom: 17,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
 
-		map = new google.maps.Map($map.get(0), mapOptions);
+				map = new google.maps.Map($map.get(0), mapOptions);
 
-		geocoder = new google.maps.Geocoder();
+				geocoder = new google.maps.Geocoder();
 
-		google.maps.event.addListener(map, 'center_changed', onMapChange);
-		google.maps.event.addListener(map, 'zoom_changed', onMapChange);
+				google.maps.event.addListener(map, 'center_changed', onMapChange);
+				google.maps.event.addListener(map, 'zoom_changed', onMapChange);
 
-		google.maps.event.addListenerOnce(map, 'idle', function () {
-			google.maps.event.trigger(map, 'zoom_changed');
+				google.maps.event.addListenerOnce(map, 'idle', function () {
+					google.maps.event.trigger(map, 'zoom_changed');
+				});
+
+				$console.trigger('submit');
+			}
 		});
 	};
 
@@ -449,7 +457,7 @@ var App = (function () {
 			content: currentMarker.data.description
 		});
 
-		infoWindow.open(map, currentMarker);
+		// infoWindow.open(map, currentMarker);
 	};
 
 	/**
@@ -462,7 +470,7 @@ var App = (function () {
 		var image = '//maps.google.com/mapfiles/kml/pal4/icon57.png';
 		
 		if (color === '000000') {
-			image = '//maps.google.com/mapfiles/kml/pal4/icon57.png//maps.google.com/mapfiles/kml/pal4/icon49.png';
+			image = '//maps.google.com/mapfiles/kml/pal4/icon49.png';
 		} else if (color === '00FF00') {
 			image = '//maps.google.com/mapfiles/kml/pal4/icon58.png';
 		}
