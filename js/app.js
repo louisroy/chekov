@@ -137,6 +137,10 @@ var App = (function () {
 			data: {
 				bbox: [$form.find('#minlon').val(), $form.find('#minlat').val(), $form.find('#maxlon').val(), $form.find('#maxlat').val()].join(',')
 			},
+			headers: {
+				Accept: "text/xml; charset=utf-8",
+				"Content-Type": "application/json; charset=utf-8"
+			},
 			dataType: 'json',
 			dataFilter: cleanUpNodes,
 			success: function (data) {
